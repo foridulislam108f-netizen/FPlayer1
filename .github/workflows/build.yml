@@ -1,4 +1,4 @@
-name: Build FPlayer1 APK
+name: Build FPlayer APK
 
 on:
   push:
@@ -15,6 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # settings.gradle যেখানেই থাকুক (রিপো অন্য ফোল্ডারের ভেতরে আপলোড হলেও) খুঁজে বের করবে
+      - name: Locate Gradle project
+        id: locate
+        run: |
+          f=$(find . -maxdepth 4 \( -name settings.gradle -o -name settings.gradle.kts \) -not -path '*/node_modules/*' | head -n 1)
+          if [ -z "$f" ]; then
+            echo "::error::settings.gradle পাওয়া যায়নি। রিপোর ফাইল স্ট্রাকচার দেখুন:"
+            find . -maxdepth 3 -not -path './.git/*' | head -100
+            exit 1
+          fi
+          dir=$(dirname "$f")
+          echo "Gradle project dir: $dir"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -27,10 +41,11 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build APK
+        working-directory: ${{ steps.locate.outputs.dir }}
         run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk FPlayer.apk
+        run: cp "${{ steps.locate.outputs.dir }}/app/build/outputs/apk/release/app-release.apk" FPlayer.apk
 
       - name: Upload APK (Actions artifact)
         uses: actions/upload-artifact@v4
