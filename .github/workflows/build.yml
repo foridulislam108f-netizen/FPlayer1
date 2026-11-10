@@ -15,13 +15,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # settings.gradle যেখানেই থাকুক (রিপো অন্য ফোল্ডারের ভেতরে আপলোড হলেও) খুঁজে বের করবে
+      # রিপোতে zip আপলোড হয়ে থাকলে নিজে থেকেই খুলে নেবে
+      - name: Extract uploaded zip (if needed)
+        run: |
+          if [ -z "$(find . -maxdepth 4 -name settings.gradle -not -path './.git/*' | head -n 1)" ]; then
+            z=$(find . -maxdepth 2 -iname '*.zip' -not -path './.git/*' | head -n 1)
+            if [ -n "$z" ]; then
+              echo "Extracting $z"
+              mkdir -p _project
+              unzip -q -o "$z" -d _project
+            fi
+          fi
+
       - name: Locate Gradle project
         id: locate
         run: |
-          f=$(find . -maxdepth 4 \( -name settings.gradle -o -name settings.gradle.kts \) -not -path '*/node_modules/*' | head -n 1)
+          f=$(find . -maxdepth 5 \( -name settings.gradle -o -name settings.gradle.kts \) -not -path './.git/*' | head -n 1)
           if [ -z "$f" ]; then
-            echo "::error::settings.gradle পাওয়া যায়নি। রিপোর ফাইল স্ট্রাকচার দেখুন:"
+            echo "::error::settings.gradle পাওয়া যায়নি। রিপোর ফাইল স্ট্রাকচার:"
             find . -maxdepth 3 -not -path './.git/*' | head -100
             exit 1
           fi
