@@ -1,4 +1,4 @@
-name: Build FPlayer APK
+name: Build FPlayer1 APK
 
 on:
   push:
@@ -43,4 +43,4 @@ jobs:
         with:
           tag_name: build-${{ github.run_number }}
           name: FPlayer build ${{ github.run_number }}
-          files: FPlayer1.apk
+          files: FPlayer.apk
